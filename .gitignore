@@ -1,0 +1,32 @@
+# Logs
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+lerna-debug.log*
+
+# Dependency directories
+node_modules/
+my-tiptap-editor/node_modules/
+
+# Lockfiles (only keep the ones for active projects)
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# Build/artifacts
+dist/
+my-tiptap-editor/dist/
+build/
+.cache/
+
+# Environment
+.env
+.env.*
+
+# IDE and OS helper files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
