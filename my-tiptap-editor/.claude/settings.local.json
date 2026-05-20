@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C /f/github/shadcn-tiptap-editor/my-tiptap-editor log --oneline --all -10)",
+      "Bash(git -C /f/github/shadcn-tiptap-editor/my-tiptap-editor diff HEAD~2..HEAD --stat)",
+      "Bash(pnpm add:*)",
+      "Bash(pnpm dev)"
+    ]
+  }
+}
