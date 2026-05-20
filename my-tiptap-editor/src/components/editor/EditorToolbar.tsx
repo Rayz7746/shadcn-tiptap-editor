@@ -1,3 +1,4 @@
+import { useState, type ReactNode } from 'react'
 import { type Editor } from '@tiptap/react'
 import {
     AlignCenter,
@@ -6,12 +7,6 @@ import {
     AlignRight,
     Bold,
     Code,
-    Heading1,
-    Heading2,
-    Heading3,
-    Heading4,
-    Heading5,
-    Heading6,
     Highlighter,
     Image as ImageIcon,
     Italic,
@@ -21,7 +16,6 @@ import {
     ListOrdered,
     Minus,
     Palette,
-    Pilcrow,
     Quote,
     Redo,
     RemoveFormatting,
@@ -31,38 +25,6 @@ import {
     Underline as UnderlineIcon,
     Undo,
 } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
-import { Toggle } from '@/components/ui/toggle'
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from '@/components/ui/tooltip'
-import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-} from '@/components/ui/popover'
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import {
-    Dialog,
-    DialogContent,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog'
-import { useState } from 'react'
 
 interface EditorToolbarProps {
     editor: Editor | null
@@ -71,11 +33,11 @@ interface EditorToolbarProps {
 
 const FONT_SIZES = [
     '8px', '9px', '10px', '11px', '12px', '14px', '16px', '18px',
-    '20px', '24px', '28px', '32px', '36px', '48px', '72px'
+    '20px', '24px', '28px', '32px', '36px', '48px', '72px',
 ]
 
 const FONT_FAMILIES = [
-    { label: 'Default', value: '' },
+    { label: 'Default', value: 'default' },
     { label: 'Arial', value: 'Arial, sans-serif' },
     { label: 'Georgia', value: 'Georgia, serif' },
     { label: 'Times New Roman', value: 'Times New Roman, serif' },
@@ -91,43 +53,100 @@ const TEXT_COLORS = [
 ]
 
 const HIGHLIGHT_COLORS = [
-    '#ffff00', '#00ff00', '#00ffff', '#ff00ff', '#0000ff', '#ff0000', '#000080', '#008080', '#00ff00', '#800080',
+    '#ffff00', '#00ff00', '#00ffff', '#ff00ff', '#0000ff', '#ff0000', '#000080', '#008080', '#800080',
 ]
 
-// Toolbar button component
 function ToolbarButton({
     onClick,
     isActive = false,
     disabled = false,
     tooltip,
     children,
-    className,
 }: {
     onClick: () => void
     isActive?: boolean
     disabled?: boolean
     tooltip: string
-    children: React.ReactNode
-    className?: string
+    children: ReactNode
 }) {
     return (
-        <Tooltip>
-            <TooltipTrigger asChild>
-                <Toggle
-                    size="sm"
-                    pressed={isActive}
-                    onPressedChange={onClick}
-                    disabled={disabled}
-                    aria-label={tooltip}
-                    className={cn('h-8 w-8 p-0', className)}
-                >
-                    {children}
-                </Toggle>
-            </TooltipTrigger>
-            <TooltipContent side="bottom" className="text-xs">
-                {tooltip}
-            </TooltipContent>
-        </Tooltip>
+        <button
+            type="button"
+            className="se-toolbar-button"
+            data-active={isActive ? 'true' : undefined}
+            disabled={disabled}
+            title={tooltip}
+            aria-label={tooltip}
+            onClick={onClick}
+        >
+            {children}
+        </button>
+    )
+}
+
+function ToolbarDivider() {
+    return <div className="se-toolbar-divider" aria-hidden="true" />
+}
+
+function ColorPopover({
+    label,
+    disabled,
+    children,
+    colors,
+    onSelect,
+    onClear,
+}: {
+    label: string
+    disabled?: boolean
+    children: ReactNode
+    colors: string[]
+    onSelect: (color: string) => void
+    onClear: () => void
+}) {
+    const [open, setOpen] = useState(false)
+
+    return (
+        <div className="se-popover">
+            <button
+                type="button"
+                className="se-toolbar-button"
+                disabled={disabled}
+                title={label}
+                aria-label={label}
+                onClick={() => setOpen((current) => !current)}
+            >
+                {children}
+            </button>
+            {open && (
+                <div className="se-popover-content">
+                    <div className="se-color-grid">
+                        {colors.map((color, index) => (
+                            <button
+                                type="button"
+                                key={`${color}-${index}`}
+                                className="se-color-swatch"
+                                style={{ backgroundColor: color }}
+                                aria-label={`${label} ${color}`}
+                                onClick={() => {
+                                    onSelect(color)
+                                    setOpen(false)
+                                }}
+                            />
+                        ))}
+                    </div>
+                    <button
+                        type="button"
+                        className="se-menu-button"
+                        onClick={() => {
+                            onClear()
+                            setOpen(false)
+                        }}
+                    >
+                        Remove {label}
+                    </button>
+                </div>
+            )}
+        </div>
     )
 }
 
@@ -140,47 +159,22 @@ export function EditorToolbar({ editor, disabled = false }: EditorToolbarProps) 
 
     if (!editor) return null
 
-    const handleInsertLink = () => {
-        if (linkUrl) {
-            editor
-                .chain()
-                .focus()
-                .extendMarkRange('link')
-                .setLink({ href: linkUrl })
-                .run()
-        }
-        setLinkUrl('')
-        setLinkDialogOpen(false)
-    }
-
-    const handleRemoveLink = () => {
-        editor.chain().focus().unsetLink().run()
-    }
-
-    const handleInsertImage = () => {
-        if (imageUrl) {
-            editor.chain().focus().setImage({ src: imageUrl, alt: imageAlt }).run()
-        }
-        setImageUrl('')
-        setImageAlt('')
-        setImageDialogOpen(false)
-    }
-
-
     const getCurrentHeading = () => {
-        for (let i = 1; i <= 6; i++) {
+        for (let i = 1; i <= 6; i += 1) {
             if (editor.isActive('heading', { level: i })) return `h${i}`
         }
+
         return 'p'
     }
 
     const handleHeadingChange = (value: string) => {
         if (value === 'p') {
             editor.chain().focus().setParagraph().run()
-        } else {
-            const level = parseInt(value.replace('h', '')) as 1 | 2 | 3 | 4 | 5 | 6
-            editor.chain().focus().toggleHeading({ level }).run()
+            return
         }
+
+        const level = parseInt(value.replace('h', ''), 10) as 1 | 2 | 3 | 4 | 5 | 6
+        editor.chain().focus().toggleHeading({ level }).run()
     }
 
     const handleFontSizeChange = (value: string) => {
@@ -199,241 +193,154 @@ export function EditorToolbar({ editor, disabled = false }: EditorToolbarProps) 
         }
     }
 
+    const handleInsertLink = () => {
+        if (linkUrl.trim()) {
+            editor.chain().focus().extendMarkRange('link').setLink({ href: linkUrl.trim() }).run()
+        }
+
+        setLinkUrl('')
+        setLinkDialogOpen(false)
+    }
+
+    const handleRemoveLink = () => {
+        editor.chain().focus().unsetLink().run()
+    }
+
+    const handleInsertImage = () => {
+        if (imageUrl.trim()) {
+            editor.chain().focus().setImage({ src: imageUrl.trim(), alt: imageAlt.trim() }).run()
+        }
+
+        setImageUrl('')
+        setImageAlt('')
+        setImageDialogOpen(false)
+    }
+
     const removeFormatting = () => {
         editor.chain().focus().clearNodes().unsetAllMarks().unsetTextAlign().run()
     }
 
     return (
-        <TooltipProvider delayDuration={300}>
-            <div className="border-b bg-muted/30">
-                {/* Row 1: Undo/Redo, Format, Font */}
-                <div className="flex flex-wrap items-center gap-0.5 p-1 border-b border-border/50">
-                    {/* Undo/Redo */}
+        <>
+            <div className="se-toolbar">
+                <div className="se-toolbar-row">
                     <ToolbarButton
                         onClick={() => editor.chain().focus().undo().run()}
                         disabled={disabled || !editor.can().undo()}
-                        tooltip="Undo (Ctrl+Z)"
+                        tooltip="Undo"
                     >
-                        <Undo className="h-4 w-4" />
+                        <Undo />
                     </ToolbarButton>
                     <ToolbarButton
                         onClick={() => editor.chain().focus().redo().run()}
                         disabled={disabled || !editor.can().redo()}
-                        tooltip="Redo (Ctrl+Y)"
+                        tooltip="Redo"
                     >
-                        <Redo className="h-4 w-4" />
+                        <Redo />
                     </ToolbarButton>
 
-                    <Separator orientation="vertical" className="mx-1 h-6" />
+                    <ToolbarDivider />
 
-                    {/* Block Format */}
-                    <Select value={getCurrentHeading()} onValueChange={handleHeadingChange} disabled={disabled}>
-                        <SelectTrigger className="h-8 w-[130px] text-xs">
-                            <SelectValue placeholder="Format" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="p">
-                                <div className="flex items-center gap-2">
-                                    <Pilcrow className="h-4 w-4" />
-                                    <span>Paragraph</span>
-                                </div>
-                            </SelectItem>
-                            <SelectItem value="h1">
-                                <div className="flex items-center gap-2">
-                                    <Heading1 className="h-4 w-4" />
-                                    <span>Heading 1</span>
-                                </div>
-                            </SelectItem>
-                            <SelectItem value="h2">
-                                <div className="flex items-center gap-2">
-                                    <Heading2 className="h-4 w-4" />
-                                    <span>Heading 2</span>
-                                </div>
-                            </SelectItem>
-                            <SelectItem value="h3">
-                                <div className="flex items-center gap-2">
-                                    <Heading3 className="h-4 w-4" />
-                                    <span>Heading 3</span>
-                                </div>
-                            </SelectItem>
-                            <SelectItem value="h4">
-                                <div className="flex items-center gap-2">
-                                    <Heading4 className="h-4 w-4" />
-                                    <span>Heading 4</span>
-                                </div>
-                            </SelectItem>
-                            <SelectItem value="h5">
-                                <div className="flex items-center gap-2">
-                                    <Heading5 className="h-4 w-4" />
-                                    <span>Heading 5</span>
-                                </div>
-                            </SelectItem>
-                            <SelectItem value="h6">
-                                <div className="flex items-center gap-2">
-                                    <Heading6 className="h-4 w-4" />
-                                    <span>Heading 6</span>
-                                </div>
-                            </SelectItem>
-                        </SelectContent>
-                    </Select>
+                    <select
+                        className="se-select se-select-wide"
+                        value={getCurrentHeading()}
+                        disabled={disabled}
+                        aria-label="Block format"
+                        onChange={(event) => handleHeadingChange(event.target.value)}
+                    >
+                        <option value="p">Paragraph</option>
+                        <option value="h1">Heading 1</option>
+                        <option value="h2">Heading 2</option>
+                        <option value="h3">Heading 3</option>
+                        <option value="h4">Heading 4</option>
+                        <option value="h5">Heading 5</option>
+                        <option value="h6">Heading 6</option>
+                    </select>
 
-                    <Separator orientation="vertical" className="mx-1 h-6" />
+                    <ToolbarDivider />
 
-                    {/* Font Family */}
-                    <Select
+                    <select
+                        className="se-select se-select-wide"
                         value={editor.getAttributes('textStyle').fontFamily || 'default'}
-                        onValueChange={handleFontFamilyChange}
                         disabled={disabled}
+                        aria-label="Font family"
+                        onChange={(event) => handleFontFamilyChange(event.target.value)}
                     >
-                        <SelectTrigger className="h-8 w-[120px] text-xs">
-                            <SelectValue placeholder="Font" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {FONT_FAMILIES.map((font) => (
-                                <SelectItem key={font.value} value={font.value || 'default'}>
-                                    <span style={{ fontFamily: font.value || 'inherit' }}>{font.label}</span>
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                        {FONT_FAMILIES.map((font) => (
+                            <option key={font.value} value={font.value}>
+                                {font.label}
+                            </option>
+                        ))}
+                    </select>
 
-                    {/* Font Size */}
-                    <Select
+                    <select
+                        className="se-select"
                         value={editor.getAttributes('textStyle').fontSize || ''}
-                        onValueChange={handleFontSizeChange}
                         disabled={disabled}
+                        aria-label="Font size"
+                        onChange={(event) => handleFontSizeChange(event.target.value)}
                     >
-                        <SelectTrigger className="h-8 w-[80px] text-xs">
-                            <SelectValue placeholder="Size" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {FONT_SIZES.map((size) => (
-                                <SelectItem key={size} value={size}>
-                                    {size}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                        <option value="">Size</option>
+                        {FONT_SIZES.map((size) => (
+                            <option key={size} value={size}>
+                                {size}
+                            </option>
+                        ))}
+                    </select>
 
-                    <Separator orientation="vertical" className="mx-1 h-6" />
+                    <ToolbarDivider />
 
-                    {/* Text Color */}
-                    <Popover>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <PopoverTrigger asChild>
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="h-8 w-8 p-0"
-                                        disabled={disabled}
-                                        aria-label="Text Color"
-                                    >
-                                        <div className="flex flex-col items-center">
-                                            <Palette className="h-4 w-4" />
-                                            <div
-                                                className="h-0.5 w-4 mt-0.5"
-                                                style={{ backgroundColor: editor.getAttributes('textStyle').color || '#000' }}
-                                            />
-                                        </div>
-                                    </Button>
-                                </PopoverTrigger>
-                            </TooltipTrigger>
-                            <TooltipContent>Text Color</TooltipContent>
-                        </Tooltip>
-                        <PopoverContent className="w-auto p-2">
-                            <div className="grid grid-cols-10 gap-1">
-                                {TEXT_COLORS.map((color) => (
-                                    <button
-                                        type="button"
-                                        key={color}
-                                        aria-label={`Set text color ${color}`}
-                                        className="h-5 w-5 rounded border border-border hover:scale-110 transition-transform"
-                                        style={{ backgroundColor: color }}
-                                        onClick={() => editor.chain().focus().setColor(color).run()}
-                                    />
-                                ))}
-                            </div>
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                className="w-full mt-2 text-xs"
-                                onClick={() => editor.chain().focus().unsetColor().run()}
-                            >
-                                Remove Color
-                            </Button>
-                        </PopoverContent>
-                    </Popover>
+                    <ColorPopover
+                        label="Text Color"
+                        disabled={disabled}
+                        colors={TEXT_COLORS}
+                        onSelect={(color) => editor.chain().focus().setColor(color).run()}
+                        onClear={() => editor.chain().focus().unsetColor().run()}
+                    >
+                        <span className="se-color-button">
+                            <Palette />
+                            <span
+                                className="se-color-preview"
+                                style={{ backgroundColor: editor.getAttributes('textStyle').color || 'currentColor' }}
+                            />
+                        </span>
+                    </ColorPopover>
 
-                    {/* Highlight Color */}
-                    <Popover>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <PopoverTrigger asChild>
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="h-8 w-8 p-0"
-                                        disabled={disabled}
-                                        aria-label="Highlight Color"
-                                    >
-                                        <Highlighter className="h-4 w-4" />
-                                    </Button>
-                                </PopoverTrigger>
-                            </TooltipTrigger>
-                            <TooltipContent>Highlight Color</TooltipContent>
-                        </Tooltip>
-                        <PopoverContent className="w-auto p-2">
-                            <div className="grid grid-cols-5 gap-1">
-                                {HIGHLIGHT_COLORS.map((color, index) => (
-                                    <button
-                                        type="button"
-                                        key={`${color}-${index}`}
-                                        aria-label={`Set highlight color ${color}`}
-                                        className="h-5 w-5 rounded border border-border hover:scale-110 transition-transform"
-                                        style={{ backgroundColor: color }}
-                                        onClick={() => editor.chain().focus().toggleHighlight({ color }).run()}
-                                    />
-                                ))}
-                            </div>
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                className="w-full mt-2 text-xs"
-                                onClick={() => editor.chain().focus().unsetHighlight().run()}
-                            >
-                                Remove Highlight
-                            </Button>
-                        </PopoverContent>
-                    </Popover>
+                    <ColorPopover
+                        label="Highlight"
+                        disabled={disabled}
+                        colors={HIGHLIGHT_COLORS}
+                        onSelect={(color) => editor.chain().focus().setBackgroundColor(color).run()}
+                        onClear={() => editor.chain().focus().unsetBackgroundColor().run()}
+                    >
+                        <Highlighter />
+                    </ColorPopover>
                 </div>
 
-                {/* Row 2: Text formatting, alignment, lists, insert */}
-                <div className="flex flex-wrap items-center gap-0.5 p-1">
-                    {/* Text formatting */}
+                <div className="se-toolbar-row">
                     <ToolbarButton
                         onClick={() => editor.chain().focus().toggleBold().run()}
                         isActive={editor.isActive('bold')}
                         disabled={disabled}
-                        tooltip="Bold (Ctrl+B)"
+                        tooltip="Bold"
                     >
-                        <Bold className="h-4 w-4" />
+                        <Bold />
                     </ToolbarButton>
                     <ToolbarButton
                         onClick={() => editor.chain().focus().toggleItalic().run()}
                         isActive={editor.isActive('italic')}
                         disabled={disabled}
-                        tooltip="Italic (Ctrl+I)"
+                        tooltip="Italic"
                     >
-                        <Italic className="h-4 w-4" />
+                        <Italic />
                     </ToolbarButton>
                     <ToolbarButton
                         onClick={() => editor.chain().focus().toggleUnderline().run()}
                         isActive={editor.isActive('underline')}
                         disabled={disabled}
-                        tooltip="Underline (Ctrl+U)"
+                        tooltip="Underline"
                     >
-                        <UnderlineIcon className="h-4 w-4" />
+                        <UnderlineIcon />
                     </ToolbarButton>
                     <ToolbarButton
                         onClick={() => editor.chain().focus().toggleStrike().run()}
@@ -441,7 +348,7 @@ export function EditorToolbar({ editor, disabled = false }: EditorToolbarProps) 
                         disabled={disabled}
                         tooltip="Strikethrough"
                     >
-                        <Strikethrough className="h-4 w-4" />
+                        <Strikethrough />
                     </ToolbarButton>
                     <ToolbarButton
                         onClick={() => editor.chain().focus().toggleSubscript().run()}
@@ -449,7 +356,7 @@ export function EditorToolbar({ editor, disabled = false }: EditorToolbarProps) 
                         disabled={disabled}
                         tooltip="Subscript"
                     >
-                        <Subscript className="h-4 w-4" />
+                        <Subscript />
                     </ToolbarButton>
                     <ToolbarButton
                         onClick={() => editor.chain().focus().toggleSuperscript().run()}
@@ -457,19 +364,18 @@ export function EditorToolbar({ editor, disabled = false }: EditorToolbarProps) 
                         disabled={disabled}
                         tooltip="Superscript"
                     >
-                        <Superscript className="h-4 w-4" />
+                        <Superscript />
                     </ToolbarButton>
 
-                    <Separator orientation="vertical" className="mx-1 h-6" />
+                    <ToolbarDivider />
 
-                    {/* Alignment */}
                     <ToolbarButton
                         onClick={() => editor.chain().focus().setTextAlign('left').run()}
                         isActive={editor.isActive({ textAlign: 'left' })}
                         disabled={disabled}
                         tooltip="Align Left"
                     >
-                        <AlignLeft className="h-4 w-4" />
+                        <AlignLeft />
                     </ToolbarButton>
                     <ToolbarButton
                         onClick={() => editor.chain().focus().setTextAlign('center').run()}
@@ -477,7 +383,7 @@ export function EditorToolbar({ editor, disabled = false }: EditorToolbarProps) 
                         disabled={disabled}
                         tooltip="Align Center"
                     >
-                        <AlignCenter className="h-4 w-4" />
+                        <AlignCenter />
                     </ToolbarButton>
                     <ToolbarButton
                         onClick={() => editor.chain().focus().setTextAlign('right').run()}
@@ -485,7 +391,7 @@ export function EditorToolbar({ editor, disabled = false }: EditorToolbarProps) 
                         disabled={disabled}
                         tooltip="Align Right"
                     >
-                        <AlignRight className="h-4 w-4" />
+                        <AlignRight />
                     </ToolbarButton>
                     <ToolbarButton
                         onClick={() => editor.chain().focus().setTextAlign('justify').run()}
@@ -493,19 +399,18 @@ export function EditorToolbar({ editor, disabled = false }: EditorToolbarProps) 
                         disabled={disabled}
                         tooltip="Justify"
                     >
-                        <AlignJustify className="h-4 w-4" />
+                        <AlignJustify />
                     </ToolbarButton>
 
-                    <Separator orientation="vertical" className="mx-1 h-6" />
+                    <ToolbarDivider />
 
-                    {/* Lists */}
                     <ToolbarButton
                         onClick={() => editor.chain().focus().toggleBulletList().run()}
                         isActive={editor.isActive('bulletList')}
                         disabled={disabled}
                         tooltip="Bullet List"
                     >
-                        <List className="h-4 w-4" />
+                        <List />
                     </ToolbarButton>
                     <ToolbarButton
                         onClick={() => editor.chain().focus().toggleOrderedList().run()}
@@ -513,19 +418,18 @@ export function EditorToolbar({ editor, disabled = false }: EditorToolbarProps) 
                         disabled={disabled}
                         tooltip="Numbered List"
                     >
-                        <ListOrdered className="h-4 w-4" />
+                        <ListOrdered />
                     </ToolbarButton>
 
-                    <Separator orientation="vertical" className="mx-1 h-6" />
+                    <ToolbarDivider />
 
-                    {/* Block elements */}
                     <ToolbarButton
                         onClick={() => editor.chain().focus().toggleBlockquote().run()}
                         isActive={editor.isActive('blockquote')}
                         disabled={disabled}
                         tooltip="Quote"
                     >
-                        <Quote className="h-4 w-4" />
+                        <Quote />
                     </ToolbarButton>
                     <ToolbarButton
                         onClick={() => editor.chain().focus().toggleCodeBlock().run()}
@@ -533,137 +437,115 @@ export function EditorToolbar({ editor, disabled = false }: EditorToolbarProps) 
                         disabled={disabled}
                         tooltip="Code Block"
                     >
-                        <Code className="h-4 w-4" />
+                        <Code />
                     </ToolbarButton>
                     <ToolbarButton
                         onClick={() => editor.chain().focus().setHorizontalRule().run()}
                         disabled={disabled}
                         tooltip="Horizontal Rule"
                     >
-                        <Minus className="h-4 w-4" />
+                        <Minus />
                     </ToolbarButton>
 
-                    <Separator orientation="vertical" className="mx-1 h-6" />
+                    <ToolbarDivider />
 
-                    {/* Link */}
                     <ToolbarButton
                         onClick={() => {
-                            const previousUrl = editor.getAttributes('link').href
-                            setLinkUrl(previousUrl || '')
+                            setLinkUrl(editor.getAttributes('link').href || '')
                             setLinkDialogOpen(true)
                         }}
                         isActive={editor.isActive('link')}
                         disabled={disabled}
                         tooltip="Insert Link"
                     >
-                        <Link2 className="h-4 w-4" />
+                        <Link2 />
                     </ToolbarButton>
                     {editor.isActive('link') && (
-                        <ToolbarButton
-                            onClick={handleRemoveLink}
-                            disabled={disabled}
-                            tooltip="Remove Link"
-                        >
-                            <Link2Off className="h-4 w-4" />
+                        <ToolbarButton onClick={handleRemoveLink} disabled={disabled} tooltip="Remove Link">
+                            <Link2Off />
                         </ToolbarButton>
                     )}
-
-                    {/* Image */}
-                    <ToolbarButton
-                        onClick={() => setImageDialogOpen(true)}
-                        disabled={disabled}
-                        tooltip="Insert Image"
-                    >
-                        <ImageIcon className="h-4 w-4" />
+                    <ToolbarButton onClick={() => setImageDialogOpen(true)} disabled={disabled} tooltip="Insert Image">
+                        <ImageIcon />
                     </ToolbarButton>
 
+                    <ToolbarDivider />
 
-                    <Separator orientation="vertical" className="mx-1 h-6" />
-
-                    {/* Remove formatting */}
-                    <ToolbarButton
-                        onClick={removeFormatting}
-                        disabled={disabled}
-                        tooltip="Remove Formatting"
-                    >
-                        <RemoveFormatting className="h-4 w-4" />
+                    <ToolbarButton onClick={removeFormatting} disabled={disabled} tooltip="Remove Formatting">
+                        <RemoveFormatting />
                     </ToolbarButton>
                 </div>
             </div>
 
-            {/* Link Dialog */}
-            <Dialog open={linkDialogOpen} onOpenChange={setLinkDialogOpen}>
-                <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                        <DialogTitle>Insert Link</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="link-url">URL</Label>
-                            <Input
-                                id="link-url"
+            {linkDialogOpen && (
+                <div className="se-dialog-backdrop" role="presentation" onMouseDown={() => setLinkDialogOpen(false)}>
+                    <div className="se-dialog" role="dialog" aria-modal="true" onMouseDown={(event) => event.stopPropagation()}>
+                        <h2 className="se-dialog-title">Insert Link</h2>
+                        <label className="se-field">
+                            <span>URL</span>
+                            <input
+                                className="se-input"
                                 type="url"
                                 placeholder="https://example.com"
                                 value={linkUrl}
-                                onChange={(e) => setLinkUrl(e.target.value)}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter') {
-                                        handleInsertLink()
-                                    }
+                                onChange={(event) => setLinkUrl(event.target.value)}
+                                onKeyDown={(event) => {
+                                    if (event.key === 'Enter') handleInsertLink()
                                 }}
+                                autoFocus
                             />
+                        </label>
+                        <div className="se-dialog-actions">
+                            <button type="button" className="se-menu-button" onClick={() => setLinkDialogOpen(false)}>
+                                Cancel
+                            </button>
+                            <button type="button" className="se-primary-button" onClick={handleInsertLink}>
+                                Insert
+                            </button>
                         </div>
                     </div>
-                    <DialogFooter>
-                        <Button variant="ghost" onClick={() => setLinkDialogOpen(false)}>
-                            Cancel
-                        </Button>
-                        <Button onClick={handleInsertLink}>Insert</Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+                </div>
+            )}
 
-            {/* Image Dialog */}
-            <Dialog open={imageDialogOpen} onOpenChange={setImageDialogOpen}>
-                <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                        <DialogTitle>Insert Image</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="image-url">Image URL</Label>
-                            <Input
-                                id="image-url"
+            {imageDialogOpen && (
+                <div className="se-dialog-backdrop" role="presentation" onMouseDown={() => setImageDialogOpen(false)}>
+                    <div className="se-dialog" role="dialog" aria-modal="true" onMouseDown={(event) => event.stopPropagation()}>
+                        <h2 className="se-dialog-title">Insert Image</h2>
+                        <label className="se-field">
+                            <span>Image URL</span>
+                            <input
+                                className="se-input"
                                 type="url"
                                 placeholder="https://example.com/image.jpg"
                                 value={imageUrl}
-                                onChange={(e) => setImageUrl(e.target.value)}
+                                onChange={(event) => setImageUrl(event.target.value)}
+                                autoFocus
                             />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="image-alt">Alt Text (optional)</Label>
-                            <Input
-                                id="image-alt"
+                        </label>
+                        <label className="se-field">
+                            <span>Alt Text</span>
+                            <input
+                                className="se-input"
                                 type="text"
                                 placeholder="Image description"
                                 value={imageAlt}
-                                onChange={(e) => setImageAlt(e.target.value)}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter') {
-                                        handleInsertImage()
-                                    }
+                                onChange={(event) => setImageAlt(event.target.value)}
+                                onKeyDown={(event) => {
+                                    if (event.key === 'Enter') handleInsertImage()
                                 }}
                             />
+                        </label>
+                        <div className="se-dialog-actions">
+                            <button type="button" className="se-menu-button" onClick={() => setImageDialogOpen(false)}>
+                                Cancel
+                            </button>
+                            <button type="button" className="se-primary-button" onClick={handleInsertImage}>
+                                Insert
+                            </button>
                         </div>
                     </div>
-                    <DialogFooter>
-                        <Button variant="ghost" onClick={() => setImageDialogOpen(false)}>
-                            Cancel
-                        </Button>
-                        <Button onClick={handleInsertImage}>Insert</Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-        </TooltipProvider>
+                </div>
+            )}
+        </>
     )
 }

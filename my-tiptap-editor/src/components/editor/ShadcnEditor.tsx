@@ -12,11 +12,9 @@ import Subscript from '@tiptap/extension-subscript'
 import Superscript from '@tiptap/extension-superscript'
 import { marked } from 'marked'
 import TurndownService from 'turndown'
-import { cn } from '@/lib/utils'
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
-import { Textarea } from '@/components/ui/textarea'
 import { EditorToolbar } from './EditorToolbar'
 import { BackgroundColor, Center, FontSize, FontFamily } from './extensions'
+import './editor.css'
 
 type EditorMode = 'editor' | 'markdown' | 'source'
 
@@ -303,11 +301,7 @@ export function ShadcnEditor({
         content: value,
         editorProps: {
             attributes: {
-                class: cn(
-                    'prose prose-sm sm:prose-base max-w-none',
-                    'focus:outline-none',
-                    'px-4 py-3'
-                ),
+                class: 'se-prosemirror prose',
                 style: `min-height: ${minHeight}`,
                 'data-placeholder': placeholder,
             },
@@ -414,54 +408,39 @@ export function ShadcnEditor({
     if (!editor) {
         return (
             <div
-                className={cn(
-                    'flex items-center justify-center rounded-md border bg-background',
-                    className
-                )}
+                className={['se-editor', 'se-loading', className].filter(Boolean).join(' ')}
                 style={{ minHeight }}
             >
-                <span className="text-muted-foreground text-sm">Loading editor...</span>
+                <span>Loading editor...</span>
             </div>
         )
     }
 
     return (
-        <div className={cn('rounded-md border bg-background shadow-sm', className)}>
-            <Tabs
-                value={mode}
-                onValueChange={(v) => handleModeChange(v as EditorMode)}
-            >
-                {/* Mode Tabs */}
-                <div className="flex items-center justify-between border-b bg-muted/40 px-1">
-                    <TabsList className="h-9 bg-transparent p-0">
-                        <TabsTrigger
-                            value="editor"
-                            className="rounded-none border-b-2 border-transparent px-4 py-2 text-sm font-medium data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
-                        >
-                            Editor
-                        </TabsTrigger>
-                        <TabsTrigger
-                            value="markdown"
-                            className="rounded-none border-b-2 border-transparent px-4 py-2 text-sm font-medium data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
-                        >
-                            Markdown
-                        </TabsTrigger>
-                        <TabsTrigger
-                            value="source"
-                            className="rounded-none border-b-2 border-transparent px-4 py-2 text-sm font-medium data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
-                        >
-                            Source
-                        </TabsTrigger>
-                    </TabsList>
-                </div>
+        <div className={['se-editor', className].filter(Boolean).join(' ')}>
+            <div className="se-mode-tabs" role="tablist" aria-label="Editor mode">
+                {(['editor', 'markdown', 'source'] as const).map((tabMode) => (
+                    <button
+                        key={tabMode}
+                        type="button"
+                        role="tab"
+                        aria-selected={mode === tabMode}
+                        className="se-mode-tab"
+                        data-active={mode === tabMode ? 'true' : undefined}
+                        onClick={() => handleModeChange(tabMode)}
+                    >
+                        {tabMode === 'editor' ? 'Editor' : tabMode === 'markdown' ? 'Markdown' : 'Source'}
+                    </button>
+                ))}
+            </div>
 
-                {/* Editor Mode */}
-                <TabsContent value="editor" className="m-0">
+            {mode === 'editor' && (
+                <div className="se-panel" role="tabpanel">
                     {invalidSourceHtml ? (
                         <>
                             <EditorToolbar editor={editor} disabled />
                             <pre
-                                className="m-0 overflow-auto whitespace-pre-wrap break-words px-4 py-3 font-mono text-sm text-destructive"
+                                className="se-invalid-source"
                                 style={{ minHeight }}
                             >
                                 <code>{invalidSourceHtml}</code>
@@ -476,40 +455,38 @@ export function ShadcnEditor({
                             />
                         </>
                     )}
-                </TabsContent>
+                </div>
+            )}
 
-                {/* Markdown Mode */}
-                <TabsContent value="markdown" className="m-0">
-                    <div className="border-b bg-muted/30 px-3 py-2">
-                        <p className="text-xs text-muted-foreground">
-                            Edit in Markdown. The saved value updates as HTML while you type.
-                        </p>
+            {mode === 'markdown' && (
+                <div className="se-panel" role="tabpanel">
+                    <div className="se-mode-note">
+                        Edit in Markdown. The saved value updates as HTML while you type.
                     </div>
-                    <Textarea
+                    <textarea
                         value={markdownContent}
                         onChange={(e) => handleMarkdownChange(e.target.value)}
-                        className="min-h-[400px] resize-none rounded-none border-0 font-mono text-sm focus-visible:ring-0"
+                        className="se-textarea"
                         style={{ minHeight }}
                         placeholder="Enter Markdown here..."
                     />
-                </TabsContent>
+                </div>
+            )}
 
-                {/* Source Mode */}
-                <TabsContent value="source" className="m-0">
-                    <div className="border-b bg-muted/30 px-3 py-2">
-                        <p className="text-xs text-muted-foreground">
-                            Edit raw HTML source directly. Broken or partial HTML stays untouched while you type.
-                        </p>
+            {mode === 'source' && (
+                <div className="se-panel" role="tabpanel">
+                    <div className="se-mode-note">
+                        Edit raw HTML source directly. Broken or partial HTML stays untouched while you type.
                     </div>
-                    <Textarea
+                    <textarea
                         value={rawHtml}
                         onChange={(e) => handleSourceChange(e.target.value)}
-                        className="min-h-[400px] resize-none rounded-none border-0 font-mono text-sm focus-visible:ring-0"
+                        className="se-textarea"
                         style={{ minHeight }}
                         placeholder="Enter HTML source here..."
                     />
-                </TabsContent>
-            </Tabs>
+                </div>
+            )}
         </div>
     )
 }
