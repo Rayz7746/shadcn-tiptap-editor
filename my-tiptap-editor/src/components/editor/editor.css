@@ -2,9 +2,39 @@
   overflow: hidden;
   border: 1px solid hsl(var(--border, 240 5.9% 90%));
   border-radius: var(--radius, 0.5rem);
-  background: hsl(var(--background, 0 0% 100%));
+  background: hsl(var(--card, var(--background, 0 0% 100%)));
   color: hsl(var(--foreground, 240 10% 3.9%));
   box-shadow: 0 1px 2px rgb(0 0 0 / 0.04);
+}
+
+.dark .se-editor {
+  --background: 0 0% 7%;
+  --foreground: 220 14% 91%;
+  --card: 0 0% 12%;
+  --card-foreground: 220 14% 91%;
+  --popover: 0 0% 17%;
+  --popover-foreground: 220 14% 93%;
+  --primary: 213 84% 72%;
+  --primary-foreground: 222 47% 11%;
+  --muted: 0 0% 12%;
+  --muted-foreground: 215 16% 72%;
+  --accent: 213 34% 24%;
+  --accent-foreground: 213 90% 82%;
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 215 16% 27%;
+  --input: 215 14% 34%;
+  --ring: 213 84% 72%;
+  --se-surface-canvas: 0 0% 7%;
+  --se-surface-card: 0 0% 12%;
+  --se-surface-elevated: 0 0% 17%;
+  --se-surface-overlay: 0 0% 20%;
+  --se-link: 213 90% 78%;
+  --se-link-hover: 213 92% 84%;
+  --se-selection: 213 84% 72%;
+  --se-code-bg: 215 20% 16%;
+  --se-warning: 48 96% 53%;
+  --se-warning-foreground: 45 12% 8%;
 }
 
 .se-loading {
@@ -15,13 +45,21 @@
   font-size: 0.875rem;
 }
 
-.se-mode-tabs {
+.se-editor-header {
   display: flex;
   align-items: center;
-  gap: 0.125rem;
+  justify-content: space-between;
+  gap: 0.5rem;
   border-bottom: 1px solid hsl(var(--border, 240 5.9% 90%));
-  background: hsl(var(--muted, 240 4.8% 95.9%) / 0.45);
+  background: hsl(var(--se-surface-elevated, var(--muted, 240 4.8% 95.9%)) / 0.96);
   padding: 0 0.25rem;
+}
+
+.se-mode-tabs {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.125rem;
 }
 
 .se-mode-tab {
@@ -45,13 +83,39 @@
   color: hsl(var(--foreground, 240 10% 3.9%));
 }
 
+.se-theme-toggle {
+  display: inline-flex;
+  width: 2rem;
+  height: 2rem;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid hsl(var(--input, 240 5.9% 90%));
+  border-radius: calc(var(--radius, 0.5rem) - 2px);
+  background: hsl(var(--card, var(--background, 0 0% 100%)));
+  color: hsl(var(--foreground, 240 10% 3.9%));
+  cursor: pointer;
+  padding: 0;
+  transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+
+.se-theme-toggle:hover {
+  background: hsl(var(--accent, 240 4.8% 95.9%));
+  color: hsl(var(--accent-foreground, 240 5.9% 10%));
+}
+
+.se-theme-toggle svg {
+  width: 1rem;
+  height: 1rem;
+}
+
 .se-panel {
   margin: 0;
 }
 
 .se-mode-note {
   border-bottom: 1px solid hsl(var(--border, 240 5.9% 90%));
-  background: hsl(var(--muted, 240 4.8% 95.9%) / 0.3);
+  background: hsl(var(--se-surface-card, var(--muted, 240 4.8% 95.9%)) / 0.86);
   color: hsl(var(--muted-foreground, 240 3.8% 46.1%));
   padding: 0.5rem 0.75rem;
   font-size: 0.75rem;
@@ -64,7 +128,7 @@
   resize: vertical;
   border: 0;
   border-radius: 0;
-  background: hsl(var(--background, 0 0% 100%));
+  background: hsl(var(--se-surface-canvas, var(--background, 0 0% 100%)));
   color: hsl(var(--foreground, 240 10% 3.9%));
   padding: 0.75rem 1rem;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
@@ -82,7 +146,8 @@
   overflow: auto;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-  background: hsl(var(--destructive, 0 84.2% 60.2%) / 0.06);
+  border-top: 1px solid hsl(var(--destructive, 0 84.2% 60.2%) / 0.28);
+  background: hsl(var(--destructive, 0 84.2% 60.2%) / 0.1);
   color: hsl(var(--destructive, 0 84.2% 60.2%));
   padding: 0.75rem 1rem;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
@@ -90,9 +155,13 @@
   line-height: 1.6;
 }
 
+.se-invalid-source code {
+  color: inherit;
+}
+
 .se-toolbar {
   border-bottom: 1px solid hsl(var(--border, 240 5.9% 90%));
-  background: hsl(var(--muted, 240 4.8% 95.9%) / 0.28);
+  background: hsl(var(--se-surface-elevated, var(--muted, 240 4.8% 95.9%)) / 0.92);
 }
 
 .se-toolbar-row {
@@ -158,7 +227,7 @@
   height: 2rem;
   border: 1px solid hsl(var(--input, 240 5.9% 90%));
   border-radius: calc(var(--radius, 0.5rem) - 2px);
-  background: hsl(var(--background, 0 0% 100%));
+  background: hsl(var(--se-surface-card, var(--background, 0 0% 100%)));
   color: hsl(var(--foreground, 240 10% 3.9%));
   font-size: 0.8125rem;
   outline: none;
@@ -167,6 +236,16 @@
 .se-select {
   width: 5.25rem;
   padding: 0 0.5rem;
+}
+
+.dark .se-select option {
+  background: hsl(var(--se-surface-overlay, var(--popover, 0 0% 100%)));
+  color: hsl(var(--popover-foreground, 240 10% 3.9%));
+}
+
+.dark .se-select option:checked {
+  background: hsl(var(--accent, 240 4.8% 95.9%));
+  color: hsl(var(--accent-foreground, 240 5.9% 10%));
 }
 
 .se-select-wide {
@@ -197,7 +276,7 @@
   max-width: 18rem;
   border: 1px solid hsl(var(--border, 240 5.9% 90%));
   border-radius: var(--radius, 0.5rem);
-  background: hsl(var(--popover, 0 0% 100%));
+  background: hsl(var(--se-surface-overlay, var(--popover, 0 0% 100%)));
   color: hsl(var(--popover-foreground, 240 10% 3.9%));
   box-shadow: 0 10px 24px rgb(0 0 0 / 0.14);
   padding: 0.5rem;
@@ -269,7 +348,7 @@
   width: min(28rem, 100%);
   border: 1px solid hsl(var(--border, 240 5.9% 90%));
   border-radius: var(--radius, 0.5rem);
-  background: hsl(var(--background, 0 0% 100%));
+  background: hsl(var(--se-surface-overlay, var(--background, 0 0% 100%)));
   color: hsl(var(--foreground, 240 10% 3.9%));
   box-shadow: 0 20px 48px rgb(0 0 0 / 0.24);
   padding: 1rem;
@@ -298,7 +377,32 @@
 .ProseMirror {
   outline: none;
   caret-color: hsl(var(--primary, 240 5.9% 10%));
+  background: hsl(var(--se-surface-canvas, var(--background, 0 0% 100%)));
+  color: hsl(var(--foreground, 240 10% 3.9%));
   padding: 0.75rem 1rem;
+}
+
+.se-editor .ProseMirror {
+  color: hsl(var(--foreground, 240 10% 3.9%));
+}
+
+.se-editor .ProseMirror p,
+.se-editor .ProseMirror li,
+.se-editor .ProseMirror blockquote,
+.se-editor .ProseMirror h1,
+.se-editor .ProseMirror h2,
+.se-editor .ProseMirror h3,
+.se-editor .ProseMirror h4,
+.se-editor .ProseMirror h5,
+.se-editor .ProseMirror h6,
+.se-editor .ProseMirror span:not([style*='color']),
+.se-editor .ProseMirror strong,
+.se-editor .ProseMirror em,
+.se-editor .ProseMirror u,
+.se-editor .ProseMirror s,
+.se-editor .ProseMirror sub,
+.se-editor .ProseMirror sup {
+  color: inherit;
 }
 
 .ProseMirror p.is-editor-empty:first-child::before {
@@ -307,6 +411,40 @@
   height: 0;
   color: hsl(var(--muted-foreground, 240 3.8% 46.1%));
   pointer-events: none;
+}
+
+.se-editor .ProseMirror p.is-editor-empty:first-child::before {
+  color: hsl(var(--muted-foreground, 240 3.8% 46.1%));
+}
+
+.dark .se-editor .ProseMirror [style^='color: #000000' i],
+.dark .se-editor .ProseMirror [style*='; color: #000000' i],
+.dark .se-editor .ProseMirror [style^='color:#000000' i],
+.dark .se-editor .ProseMirror [style*=';color:#000000' i],
+.dark .se-editor .ProseMirror [style^='color: #000' i],
+.dark .se-editor .ProseMirror [style*='; color: #000' i],
+.dark .se-editor .ProseMirror [style^='color:#000' i],
+.dark .se-editor .ProseMirror [style*=';color:#000' i],
+.dark .se-editor .ProseMirror [style^='color: rgb(0, 0, 0)' i],
+.dark .se-editor .ProseMirror [style*='; color: rgb(0, 0, 0)' i],
+.dark .se-editor .ProseMirror [style^='color:rgb(0, 0, 0)' i],
+.dark .se-editor .ProseMirror [style*=';color:rgb(0, 0, 0)' i] {
+  color: hsl(var(--foreground, 220 14% 91%)) !important;
+}
+
+.dark .se-editor .ProseMirror [style^='color: #ffffff' i],
+.dark .se-editor .ProseMirror [style*='; color: #ffffff' i],
+.dark .se-editor .ProseMirror [style^='color:#ffffff' i],
+.dark .se-editor .ProseMirror [style*=';color:#ffffff' i],
+.dark .se-editor .ProseMirror [style^='color: #fff' i],
+.dark .se-editor .ProseMirror [style*='; color: #fff' i],
+.dark .se-editor .ProseMirror [style^='color:#fff' i],
+.dark .se-editor .ProseMirror [style*=';color:#fff' i],
+.dark .se-editor .ProseMirror [style^='color: rgb(255, 255, 255)' i],
+.dark .se-editor .ProseMirror [style*='; color: rgb(255, 255, 255)' i],
+.dark .se-editor .ProseMirror [style^='color:rgb(255, 255, 255)' i],
+.dark .se-editor .ProseMirror [style*=';color:rgb(255, 255, 255)' i] {
+  color: hsl(var(--se-surface-canvas, var(--background, 0 0% 7%))) !important;
 }
 
 .editor-content .ProseMirror {
@@ -370,7 +508,8 @@
 .ProseMirror.prose pre {
   overflow-x: auto;
   border-radius: var(--radius, 0.5rem);
-  background: hsl(var(--muted, 240 4.8% 95.9%));
+  border: 1px solid hsl(var(--border, 240 5.9% 90%));
+  background: hsl(var(--se-code-bg, var(--muted, 240 4.8% 95.9%)));
   padding: 1em;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
   font-size: 0.875em;
@@ -378,7 +517,7 @@
 
 .ProseMirror.prose code {
   border-radius: calc(var(--radius, 0.5rem) - 2px);
-  background: hsl(var(--muted, 240 4.8% 95.9%));
+  background: hsl(var(--se-code-bg, var(--muted, 240 4.8% 95.9%)));
   padding: 0.2em 0.4em;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
   font-size: 0.875em;
@@ -398,7 +537,12 @@
 
 .dark .ProseMirror .editor-link,
 .dark .ProseMirror a {
-  color: hsl(217.2 91.2% 69.8%);
+  color: hsl(var(--se-link, 213 90% 78%));
+}
+
+.dark .ProseMirror .editor-link:hover,
+.dark .ProseMirror a:hover {
+  color: hsl(var(--se-link-hover, 213 92% 84%));
 }
 
 .ProseMirror .editor-image,
@@ -425,8 +569,14 @@
   padding: 0.1em 0.2em;
 }
 
+.dark .ProseMirror mark {
+  border: 1px solid hsl(0 0% 100% / 0.18);
+  background-color: hsl(var(--se-warning, 48 96% 53%));
+  color: hsl(var(--se-warning-foreground, 45 12% 8%));
+}
+
 .ProseMirror ::selection {
-  background: hsl(var(--primary, 240 5.9% 10%) / 0.2);
+  background: hsl(var(--se-selection, var(--primary, 240 5.9% 10%)) / 0.28);
 }
 
 .ProseMirror sub {

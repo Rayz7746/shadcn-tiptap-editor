@@ -1,3 +1,5 @@
+'use client'
+
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
@@ -10,6 +12,7 @@ import Image from '@tiptap/extension-image'
 import Link from '@tiptap/extension-link'
 import Subscript from '@tiptap/extension-subscript'
 import Superscript from '@tiptap/extension-superscript'
+import { Moon, Sun } from 'lucide-react'
 import { marked } from 'marked'
 import TurndownService from 'turndown'
 import { EditorToolbar } from './EditorToolbar'
@@ -221,6 +224,7 @@ export function ShadcnEditor({
 }: ShadcnEditorProps) {
     const [mode, setMode] = useState<EditorMode>('editor')
     const modeRef = useRef<EditorMode>('editor')
+    const [isDark, setIsDark] = useState(false)
     const [rawHtml, setRawHtml] = useState(value)
     const [markdownContent, setMarkdownContent] = useState('')
     const [isMarkdownDirty, setIsMarkdownDirty] = useState(false)
@@ -232,6 +236,26 @@ export function ShadcnEditor({
     useEffect(() => {
         modeRef.current = mode
     }, [mode])
+
+    useEffect(() => {
+        const storedTheme = window.localStorage.getItem('theme')
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+        const shouldUseDark = storedTheme ? storedTheme === 'dark' : prefersDark
+
+        document.documentElement.classList.toggle('dark', shouldUseDark)
+        setIsDark(shouldUseDark)
+    }, [])
+
+    const toggleTheme = useCallback(() => {
+        setIsDark((currentIsDark) => {
+            const nextIsDark = !currentIsDark
+
+            document.documentElement.classList.toggle('dark', nextIsDark)
+            window.localStorage.setItem('theme', nextIsDark ? 'dark' : 'light')
+
+            return nextIsDark
+        })
+    }, [])
 
     // Convert HTML to Markdown
     const htmlToMarkdown = useCallback((html: string): string => {
@@ -276,7 +300,7 @@ export function ShadcnEditor({
                 multicolor: true,
             }),
             Image.configure({
-                inline: true,
+                inline: false,
                 allowBase64: true,
                 HTMLAttributes: {
                     class: 'editor-image',
@@ -418,20 +442,31 @@ export function ShadcnEditor({
 
     return (
         <div className={['se-editor', className].filter(Boolean).join(' ')}>
-            <div className="se-mode-tabs" role="tablist" aria-label="Editor mode">
-                {(['editor', 'markdown', 'source'] as const).map((tabMode) => (
-                    <button
-                        key={tabMode}
-                        type="button"
-                        role="tab"
-                        aria-selected={mode === tabMode}
-                        className="se-mode-tab"
-                        data-active={mode === tabMode ? 'true' : undefined}
-                        onClick={() => handleModeChange(tabMode)}
-                    >
-                        {tabMode === 'editor' ? 'Editor' : tabMode === 'markdown' ? 'Markdown' : 'Source'}
-                    </button>
-                ))}
+            <div className="se-editor-header">
+                <div className="se-mode-tabs" role="tablist" aria-label="Editor mode">
+                    {(['editor', 'markdown', 'source'] as const).map((tabMode) => (
+                        <button
+                            key={tabMode}
+                            type="button"
+                            role="tab"
+                            aria-selected={mode === tabMode}
+                            className="se-mode-tab"
+                            data-active={mode === tabMode ? 'true' : undefined}
+                            onClick={() => handleModeChange(tabMode)}
+                        >
+                            {tabMode === 'editor' ? 'Editor' : tabMode === 'markdown' ? 'Markdown' : 'Source'}
+                        </button>
+                    ))}
+                </div>
+                <button
+                    type="button"
+                    className="se-theme-toggle"
+                    aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+                    title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+                    onClick={toggleTheme}
+                >
+                    {isDark ? <Sun /> : <Moon />}
+                </button>
             </div>
 
             {mode === 'editor' && (

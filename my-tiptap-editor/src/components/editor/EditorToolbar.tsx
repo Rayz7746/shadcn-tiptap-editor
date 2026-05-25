@@ -207,8 +207,10 @@ export function EditorToolbar({ editor, disabled = false }: EditorToolbarProps) 
     }
 
     const handleInsertImage = () => {
-        if (imageUrl.trim()) {
-            editor.chain().focus().setImage({ src: imageUrl.trim(), alt: imageAlt.trim() }).run()
+        const trimmedUrl = imageUrl.trim()
+
+        if (trimmedUrl) {
+            editor.chain().focus().setImage({ src: trimmedUrl, alt: imageAlt.trim() }).run()
         }
 
         setImageUrl('')
